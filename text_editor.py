@@ -1,20 +1,13 @@
-import time
-import os
+
+# cilj je maknit sve di se koristi global file i zaminit ga s rijecnikom 
+# global file se triba koristit samo kad otvaram i kad zatvaram file
 #global variables 
 running = False             #if program is running or not
-file_name = "empty"         
+file_name = ""         
 file = ""
+txt_file = {} 
 current_line = 0            #number of the last line in file
-
-def get_curr_line():
-    global current_line
-    return current_line
-
-
-def curr_line_inc():
-    global current_line
-    current_line = current_line + 1
-
+        
 
 def welcome_screen():
     print('##############################################################')
@@ -35,7 +28,7 @@ def show_commands():
     print('Use these command for file:')
     print('*open    *close    *save    *delete    *help')
     print('Use these command for lines:')
-    print('*write   *delete    *edit    *insert')
+    print('*write   *read    *edit     *edit_line    *insert')
     print('Enter *exit to exit program')
 
 
@@ -46,7 +39,7 @@ def exit_program():
         file.readline()
         close_file()
     except:
-        print'exiting program'
+        print('exiting program')
     running = False
 
 
@@ -55,32 +48,40 @@ def open_file():
     global file
     global current_line
     #check if another file is opened
-    if file_name == "empty":
+    if file_name == "":
         try:
             tmp_name = raw_input("Enter name of the file: ")
             tmp_name += '.txt' #can not change global variable directly
             file_name = tmp_name
             file = open(tmp_name, 'a+')
             print(tmp_name + ' opened')
-
+            try:
+                for line in file:
+                    if not line:
+                        break
+                    txt_file = {current_line : flie.readline()}
+                    current_line = current_line + 1
+            except:
+                print ('File is empty\n')
         except:
             print 'Error occured while opening file'
     else:
-        print 'File already opened, please close it first'
+        print 'Could not open file'
+        file.close()
 
 
 def close_file():
     try:
-        global file
         global file_name
-        file.close()
+        global txt_file
+
+        write_to_file()                     #writing text from dict to file before closing
         print ('%s closed' %file_name)
+        txt_file.clear()               #empty everything
         file = ""
-        file_name = "empty"
-        return 0
+        file_name = ""
     except:
         print('File not oppened')
-        return 0
 
 #gets number of lines in file so it can continue to write line numbers, still have to make it work
 #def get_last_line():            
@@ -103,17 +104,20 @@ def check_input(command):
                 return
             if command == '*save':
                 return
-            if command == '*write':
-                write_line()
-                return
             if command == '*delete':
                 delete_line()
-                return
-            if command == '*edit':
+                return            
+            if command == '*write':
                 write()
                 return
             if command == '*edit':
                 write()
+                return
+            if command == '*read':
+                read()
+                return
+            if command == '*edit_line':
+                edit_line()
                 return  
             if command == '*help':
                 show_commands()
@@ -129,25 +133,51 @@ def check_input(command):
 
 
 def write():
-    global file
     global current_line
-    if file:
-        content = 'null'
-        lines = {}
-        print('To exit write mode enter *back')
-        while (content != '*back'):
-            content = raw_input()
-            lines[current_line] = content       #adding curent input to dictionary
-            current_line = current_line + 1     #incrementing last line in file
+    global txt_file
+    user_input = 'null'
+    try:
+        while (user_input != '*back'):
+            user_input = raw_input()
+            txt_file = { current_line : user_input }
+            current_line = current_line + 1
+    except:
+        print('No file opened\n')
+    print ('Edit mode closed')
 
-        for line, text in lines.items():
-            file.write('%s\t%s\n' %(line, text))       #writing text from dictionary to file
 
-        file.flush()
-        print('Edit mode closed.')
-        return 
-    else:
-        print ('No file opened')
+def write_to_file():
+    global txt_file
+    global file_name
+    file = open(file_name, 'a+')
+    for line, text in txt_file.items():
+        file.write('%s\t%s\n' %(line, text))       #writing text from dictionary to file
+    file.flush()
+
+
+def read():
+    print ('read')
+
+
+def print_to_console(text):
+    for line in text:
+        print('%s\n' %line)
+
+
+def edit_line():
+    global file
+    row = input('Which line to edit: ')
+    text = raw_input('Text to replace: \n')
+    lines = []
+    for line in file:
+        lines.append(line)
+    lines[row] = text
+    for line in lines:
+        if line == row:
+            file.write('%s\t%s\n' %(row, line))
+        else:
+            file.write('%s\n' %line)
+
 
 # make edit write and read function 
 
